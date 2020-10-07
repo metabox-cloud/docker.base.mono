@@ -32,7 +32,7 @@ RUN \
 		iftop \
 		p7zip \
 		unrar \
-        zlib-dev &&\
+        zlib-dev
 	
 ##Install Mono
 RUN apk add --no-cache mono --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing
@@ -49,7 +49,7 @@ RUN \
     cd /tmp/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library &&\
     make install &&\
     cd /tmp/MediaInfo_DLL_GNU_FromSource/ZenLib/Project/GNU/Library &&\
-    make install &&\
+    make install
 
 #Do Cleanup
 RUN \
