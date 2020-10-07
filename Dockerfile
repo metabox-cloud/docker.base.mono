@@ -4,11 +4,9 @@ FROM alpine:latest
 LABEL maintainer="metaBox <contact@metabox.cloud>"
 LABEL build_version=="metaBox - Mono Base - v: 1.0"
 
-#MEDIAINFO VERSION
-ENV MEDIAINFO_VERSION='0.7.93'
-
-#Add Repo
-RUN apk add --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing
+#ENV Variables
+ENV MEDIAINFO_VERSION='0.7.94'
+ENV LANG=C.UTF-8
 
 # InstalL s6 overlay
 RUN wget https://github.com/just-containers/s6-overlay/releases/download/v1.21.4.0/s6-overlay-amd64.tar.gz -O s6-overlay.tar.gz && \
@@ -17,48 +15,41 @@ RUN wget https://github.com/just-containers/s6-overlay/releases/download/v1.21.4
 
 #Add Dependancies.
 RUN \
-	apk add \
-	curl \
-	g++ \
-	gcc \
-	git \
-	libcurl \
-	python3 \
-	make \
-	tar \
-	unrar \
-	p7zip \
-	wget \
-	xz \ 
-	tar \
-	sqlite \
-	nano \
-	htop
+    apk add --no-cache \
+        sqlite-libs \
+        libstdc++ &&\
+    apk add --no-cache \
+        --virtual=build-dependencies \
+        ca-certificates \
+        curl \
+        g++ \
+        gcc \
+        git \
+        make \
+        tar \
+        xz \
+		htop \
+		iftop \
+		p7zip \
+		unrar \
+        zlib-dev &&\
 	
 ##Install Mono
 RUN apk add --no-cache mono --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing
-
 	
-# Add volumes
-VOLUME [ "/config" ]
-	
+##Install Mediainfo
 RUN \	
-  mkdir -p /build/mediaInfo && \
-  curl -o /build/mediaInfo/MediaInfo_CLI_${MEDIAINFO_VERSION}_GNU_FromSource.tar.xz -L https://mediaarea.net/download/binary/mediainfo/${MEDIAINFO_VERSION}/MediaInfo_CLI_${MEDIAINFO_VERSION}_GNU_FromSource.tar.xz && \
-  curl -o /build/mediaInfo//MediaInfo_DLL_${MEDIAINFO_VERSION}_GNU_FromSource.tar.xz -L https://mediaarea.net/download/binary/libmediainfo0/${MEDIAINFO_VERSION}/MediaInfo_DLL_${MEDIAINFO_VERSION}_GNU_FromSource.tar.xz && \
-  cd /build/mediaInfo && \
-  tar xpf MediaInfo_CLI_${MEDIAINFO_VERSION}_GNU_FromSource.tar.xz && \
-  tar xpf MediaInfo_DLL_${MEDIAINFO_VERSION}_GNU_FromSource.tar.xz && \
-  cd /build/mediaInfo/MediaInfo_CLI_GNU_FromSource && \
-  ./CLI_Compile.sh && \
-  cd /build/mediaInfo/MediaInfo_CLI_GNU_FromSource/MediaInfo/Project/GNU/CLI/ && \
-  make install && \
-  cd /build/mediaInfo/MediaInfo_DLL_GNU_FromSource && \
-  ./SO_Compile.sh && \
-  cd /build/mediaInfo/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library && \
-  make install && \
-  cd /build/mediaInfo/MediaInfo_DLL_GNU_FromSource/ZenLib/Project/GNU/Library && \
-  make install
+    curl -o \
+        /tmp/mediainfo.src.tar.xz -L \
+        https://mediaarea.net/download/binary/libmediainfo0/${MEDIAINFO_VERSION}/MediaInfo_DLL_${MEDIAINFO_VERSION}_GNU_FromSource.tar.xz &&\
+    tar -xJf /tmp/mediainfo.src.tar.xz \
+        -C /tmp &&\
+    cd /tmp/MediaInfo_DLL_GNU_FromSource &&\
+    ./SO_Compile.sh &&\
+    cd /tmp/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/GNU/Library &&\
+    make install &&\
+    cd /tmp/MediaInfo_DLL_GNU_FromSource/ZenLib/Project/GNU/Library &&\
+    make install &&\
 
 #Do Cleanup
 RUN \
@@ -67,13 +58,10 @@ RUN \
     g++ \
     gcc \
     git \
-    sqlite
+    sqlite \
+	build-dependencies
 RUN \
   rm -rf \
     /root/.cache \
-    /tmp/* \
-    /build/*
-	
-# Setup EntryPoint
-ENTRYPOINT [ "/init" ]
+    /tmp/* 
 
